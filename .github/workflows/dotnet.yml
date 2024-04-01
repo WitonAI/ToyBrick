@@ -91,7 +91,7 @@ jobs:
 
       - name: Publish the package to nuget.org
         if: steps.nuget-token-check.outputs.defined == 'true'
-        run: dotnet nuget push package/**.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push *.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
 
@@ -107,6 +107,6 @@ jobs:
           name: package
 
       - name: Publish the package to nuget.org
-        run: dotnet nuget push package/**.nupkg -k $NUGET_AUTH_TOKEN -s https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        run: dotnet nuget push *.nupkg -k $NUGET_AUTH_TOKEN -s https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
