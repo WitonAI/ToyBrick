@@ -74,6 +74,6 @@ jobs:
 
       - name: Publish the package to nuget.org
         if: steps.nuget-token-check.outputs.defined == 'true'
-        run: dotnet nuget push */bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push bin/Release/**.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
