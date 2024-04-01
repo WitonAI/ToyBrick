@@ -49,8 +49,8 @@ jobs:
       - name: Package
         run: dotnet pack -c Release
 
-  deploy:
-    name: Deploy to Nuget
+  package:
+    name: Package
     runs-on: ubuntu-latest
     needs: [build]
     # if: github.ref_name == github.event.repository.default_branch
@@ -60,7 +60,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
 
       - name: Package
-        run: dotnet pack -c Release
+        run: dotnet pack -c Release -o ./artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: ./artifacts/**.nupkg
+
+  deploy-nuget-org:
+    name: Deploy to Nuget
+    runs-on: ubuntu-latest
+    needs: [package]
+    steps:
 
       - name: Check for NUGET_TOKEN Secret availability
         id: nuget-token-check
@@ -72,8 +84,29 @@ jobs:
             echo "defined=false" >> $GITHUB_OUTPUT;
           fi
 
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+
       - name: Publish the package to nuget.org
         if: steps.nuget-token-check.outputs.defined == 'true'
-        run: dotnet nuget push bin/Release/**.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push package/**.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
+
+  deploy-github-packages:
+    name: Deploy to GitHub Packages Registry
+    runs-on: ubuntu-latest
+    needs: [package]
+    steps:
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+
+      - name: Publish the package to nuget.org
+        run: dotnet nuget push package/**.nupkg -k $NUGET_AUTH_TOKEN -s https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
