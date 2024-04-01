@@ -1,6 +1,6 @@
 name: dotnet
 
-on: [push, workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   check:
@@ -14,22 +14,34 @@ jobs:
         id: csprojcheck
         run: echo "csprojcheck=$(ls *.csproj &> /dev/null && echo true || echo false)" >> $GITHUB_OUTPUT
 
-
   build:
+    name: Build in dotnet ${{ matrix.dotnet-version }}
     runs-on: ubuntu-latest
     needs: [check]
     if: needs.check.outputs.csproj-exists == 'true'
     strategy:
       matrix:
-        dotnet-version: ["6", "7","8"]
+        dotnet-version: ["6", "7", "8", "9"]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup dotnet ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Display dotnet version
         run: dotnet --version
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Test
+        run: dotnet test -c Release --logger GitHubActions
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish
